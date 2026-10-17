@@ -5,6 +5,7 @@ Suno production workspace integrating a Manifest V3 Chrome extension (CRX), brow
 ## Architecture principles
 
 - **GitHub is the source of truth for prompts and specifications:** prompt files, MRD, ADRs, JSON Schemas, SQL migrations, tests, and implementation.
+- **GitHub Actions** validates contracts, runs tests, builds/packages the CRX, and publishes workflow artifacts.
 - **GH API + Local Agent** retrieves and validates prompts, creates run IDs, and dispatches one generation job at a time.
 - **WS Bridge** transports versioned commands/events between the local agent and CRX. Actual endpoints and method names must be confirmed against the bridge implementation before coding.
 - **The CRX** provides browser UI and submits prompts through the Suno Web UI, with validated commands and explicit user control.
@@ -16,14 +17,19 @@ Suno production workspace integrating a Manifest V3 Chrome extension (CRX), brow
 
 GitHub prompt/spec → GH API → Local Agent → WS Bridge → CRX → Suno Web → identify generated clip → user-initiated recording → Local Workspace → SQLite metadata/index → export result manifest.
 
-See [WS Bridge workflow](docs/ws-bridge-workflow.md) for sequence, state machine, correlation IDs, reliability, and security.
+## Execution split
+
+GitHub Actions handles deterministic repository tasks: lint, schema validation, migration/fixture tests, unit tests, build/package, release artifacts, and PR/Issue automation. Local Agent + CRX + WS Bridge handle the live Suno browser, clip identification, local Workspace, audio recording/conversion, and real-browser OPFS verification.
+
+See [execution boundary](docs/execution-boundary.md) and [WS Bridge workflow](docs/ws-bridge-workflow.md).
 
 ## First milestones
 
 1. Validate SQLite WASM/OPFS inside the target MV3 extension context.
 2. Inspect the existing WS Bridge and Recorder implementation and document actual methods, endpoints, approvals, and permissions.
-3. Freeze the data/message contracts before implementing the end-to-end flow.
-4. Implement one prompt/run at a time with idempotency and observable states.
+3. Add GitHub Actions for deterministic validation/build checks.
+4. Freeze the data/message contracts before implementing the end-to-end flow.
+5. Implement one prompt/run at a time with idempotency and observable states.
 
 ## Documents
 
@@ -33,6 +39,7 @@ See [WS Bridge workflow](docs/ws-bridge-workflow.md) for sequence, state machine
 - [Storage boundaries ADR](docs/adr/0001-storage-boundaries.md)
 - [Data contract](docs/data-contract.md)
 - [WS Bridge workflow](docs/ws-bridge-workflow.md)
+- [GitHub Actions vs local execution](docs/execution-boundary.md)
 
 ## Safety and data handling
 
@@ -47,4 +54,4 @@ See [WS Bridge workflow](docs/ws-bridge-workflow.md) for sequence, state machine
 
 ## Related planning
 
-See [bonsai/crxman#41](https://github.com/bonsai/crxman/issues/41) and the integration inventory issues #48–#51 in that repository. Follow the implementation checklist in [sunomono#7](https://github.com/bonsai/sunomono/issues/7).
+See [bonsai/crxman#41](https://github.com/bonsai/crxman/issues/41) and integration inventory issues #48–#51 in that repository. Follow [sunomono#7](https://github.com/bonsai/sunomono/issues/7) and [sunomono#8](https://github.com/bonsai/sunomono/issues/8).
